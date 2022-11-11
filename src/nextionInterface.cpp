@@ -12,7 +12,7 @@
     xSemaphoreGive(_xSerialReadSemaphore);
   }
 
-  void myNextionInterface::begin() {
+  bool myNextionInterface::begin() {
     // sLog.send("Starting myNex", true);
     vTaskDelay(100 / portTICK_PERIOD_MS);
     _serial->begin(_baud, SERIAL_8N1, RXDN, TXDN);
@@ -24,6 +24,14 @@
     vTaskDelay(100 / portTICK_PERIOD_MS);
     // sLog.send("Resetting Display");
     writeCmd("rest");
+
+      // Set up queues and tasks
+    read_from_Nextion_queue = xQueueCreate(ESPNOW_QUEUE_SIZE, ESP_BUFFER_SIZE);
+    if (read_from_Nextion_queue == NULL) {
+      Serial.println("Create Queue failed");
+      return false;
+    }
+    return true;
   }
 
   // Read and throw away serial input until no bytes (or timeout)
@@ -103,17 +111,32 @@
             if (_byte_read == '\xFF') _terminatorCount++;
           }
           xSemaphoreGive(_xSerialReadSemaphore);
+          // Queue
+          if (_nexBytes.length() <= ESP_BUFFER_SIZE) {
+            // Convert to ASCII triplets and Queue
+              if (_nexBytes.length() > 3) {
+                std::string _hexString;
+                char _x[3] = {};
+                _hexString.reserve(_nexBytes.length() * 3);
+                for (const auto& item : _nexBytes) {
+                  sprintf(_x, "%02X ", item);
+                  _hexString += _x;
+                }
+                Serial.println((String)_hexString.c_str());
+                if (xQueueSend(read_from_Nextion_queue, (void *)_hexString.c_str(), 0) != pdTRUE) {
+                  Serial.println("Error sending to Nextion queue");
+                }
+              }
+          }
           return _nexBytes.length();
         }
         xSemaphoreGive(_xSerialReadSemaphore);
         return false;
       } else {
-        // sLog.send("listen() read Semaphore fail");
         return false;
       }
     }
     else
-      // sLog.send("listen() read Semaphore NULL");
       return false;
   }  //listen()
   

@@ -112,9 +112,6 @@ void espnowHeartbeat(void *parameter) {
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len) {
   // char recvBuffer[ESP_BUFFER_SIZE] = {0};
   if (len <= ESP_BUFFER_SIZE) {
-    // copy valid bytes > 'len' into clean buffer, then queue
-    // memcpy(recvBuffer, incomingData, len);
-    // if (xQueueSend(send_to_Serial_queue, (void *)recvBuffer, 0) != pdTRUE) {
     if (xQueueSend(send_to_Serial_queue, (void *)incomingData, 0) != pdTRUE) {
       Serial.println("Error sending to queue");
     }

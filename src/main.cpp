@@ -10,6 +10,12 @@
 myNextionInterface myNex(NEXTION_SERIAL, NEXTION_BAUD);
 void handleNextion(void* );
 TaskHandle_t xhandleNextionHandle = NULL;
+TaskHandle_t xhandleNextionReadHandle = NULL;
+
+// void callNext(void *parameter){
+//   Serial.println("Setting up nextionListen task...");
+//   myNex.nextionListen(parameter);
+// }
 
 void setup() {
   // Serial
@@ -27,6 +33,7 @@ void setup() {
   };
 
   xTaskCreate(handleNextion, "Nextion Handler", 3000, NULL, 6, &xhandleNextionHandle);
+  // xTaskCreate(callNext, "Nextion Read Handler", 3000, NULL, 6, &xhandleNextionReadHandle);
 }
 
 void loop() {
@@ -40,7 +47,9 @@ void loop() {
 // Check for command from BLE interface
 // write command to Nextion Display
 void handleNextion(void* parameter) {
-  
+
+  char receiveBuffer[ESP_BUFFER_SIZE]; // Incmoing buffer for Nextion Queue messages
+
   StaticJsonDocument<ESP_BUFFER_SIZE> doc;
 
   // Events we care about
@@ -62,6 +71,11 @@ void handleNextion(void* parameter) {
     if (_bytes.length() > 0) _bytes.clear();
     if (_hexString.length() > 0) _hexString.clear();
 
+    if (xQueueReceive(myNex.read_from_Nextion_queue, (void *)receiveBuffer, 10/portTICK_PERIOD_MS) == pdTRUE) {
+
+      Serial.println((String)"handleNextion Queue: " + receiveBuffer);
+    }
+
     int _len = myNex.listen(_bytes, 48);
     if (_len) {
       if (_len > 3) {
@@ -70,7 +84,6 @@ void handleNextion(void* parameter) {
           sprintf(_x, "%02X ", item);
           _hexString += _x;
         }
-        // sLog.send((String)"handleNextion returned: " + _hexString.c_str());
         Serial.println((String)"handleNextion returned: " + _hexString.c_str());
         
         // If we see interesting event from Nextion, forward to BLE interface
@@ -94,11 +107,11 @@ void handleNextion(void* parameter) {
           }
         }
       } else {
-        // sLog.send("handleNextion: Short read");
         myNex.flushReads();
       }
     }
     vTaskDelay(100 / portTICK_PERIOD_MS);
   }
+  Serial.println("Task ended");
   vTaskDelete(NULL);  // Should never reach this.
 }  // handleNextion()
