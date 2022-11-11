@@ -1,0 +1,6 @@
+{
+  "files.associations": {
+    "*.py": "python",
+    "system_error": "cpp"
+  }
+}
