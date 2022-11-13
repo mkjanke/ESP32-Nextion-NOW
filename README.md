@@ -7,6 +7,23 @@ ESP-NOW interface to Nextion Serial Displays.
 Uses: 
 * ArduinoJson
 
+## ESP_NOW message format:
+Message sent to Nextion via ESP-NOW format:
+* {"D": "ESP DEVICE NAME", "CMD": "Nextion Command"}
+ 
+Example:
+To send a nextion command "page0.Ah1.val=123" to the Nextion (update Nextion object Ah1 on page0 to the value 123):
+* {"D": "ESP-Display", "CMD": "page0.Ah1.val=123"}
+
+Message from Nextion sent via ESP-NOW format:
+* JSON>> {"D":"ESP-DEVICE-NAME","MSG":"Hex message converted to ASCII representation"}\r\n
+
+Exmple: 
+Message from Nextion '66 00' (Nextion 'sendme' response)
+* JSON>> {"D":"ESP-Test","MSG":"66 00 FF FF FF "}\r\n'
+
+Note that Nextion responses are formatted and sent as ASCII representation of binary/hex emitted by Nextion
+
 Key components:
 
 * ESP_NOW callback:
