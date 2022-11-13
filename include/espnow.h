@@ -8,8 +8,8 @@
 #include "nextionInterface.h"
 
 bool initEspNow();
-int espNowSend(const String&);
-int espNowSend(const JsonDocument&);
+bool espNowSend(const String&);
+bool espNowSend(const JsonDocument&);
 extern myNextionInterface myNex;
 
 #endif

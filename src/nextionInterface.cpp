@@ -7,30 +7,20 @@
     // Initialize semaphores
     _xSerialWriteSemaphore = xSemaphoreCreateBinary();
     xSemaphoreGive(_xSerialWriteSemaphore);
-
     _xSerialReadSemaphore = xSemaphoreCreateBinary();
     xSemaphoreGive(_xSerialReadSemaphore);
   }
 
   bool myNextionInterface::begin() {
-    // sLog.send("Starting myNex", true);
     vTaskDelay(100 / portTICK_PERIOD_MS);
     _serial->begin(_baud, SERIAL_8N1, RXDN, TXDN);
 
     vTaskDelay(400 / portTICK_PERIOD_MS); //Pause for effect
     flushReads();
     
-    //Reset Nextion
+    //Reset Nextion Display
     vTaskDelay(100 / portTICK_PERIOD_MS);
-    // sLog.send("Resetting Display");
     writeCmd("rest");
-
-      // Set up queues and tasks
-    read_from_Nextion_queue = xQueueCreate(ESPNOW_QUEUE_SIZE, ESP_BUFFER_SIZE);
-    if (read_from_Nextion_queue == NULL) {
-      Serial.println("Create Queue failed");
-      return false;
-    }
     return true;
   }
 
@@ -50,7 +40,6 @@
   // Thread safe writes (I think...)
   void myNextionInterface::writeNum(const String& _componentName, uint32_t _val) {
     String _command = _componentName + "=" +_val;
-    // sLog.send("writeNum: " + _command);
     if(_xSerialWriteSemaphore != NULL ){
       if (xSemaphoreTake(_xSerialWriteSemaphore, 100 / portTICK_PERIOD_MS) ==
           pdTRUE) {
@@ -64,7 +53,6 @@
 
   void myNextionInterface::writeStr(const String& command, const String& txt) {
     String _command = command + "=\"" + txt + "\"";
-    // sLog.send("writeStr: " + _command);
     if(_xSerialWriteSemaphore != NULL ){
       if (xSemaphoreTake(_xSerialWriteSemaphore, 100 / portTICK_PERIOD_MS) ==
           pdTRUE) {
@@ -77,9 +65,8 @@
   } //writeStr()
 
   void myNextionInterface::writeCmd(const String& command) {
-    // sLog.send("writeCmd: " + command);
     if(_xSerialWriteSemaphore != NULL ){
-      if(_xSerialWriteSemaphore != NULL ){
+      // if(_xSerialWriteSemaphore != NULL ){
         if (xSemaphoreTake(_xSerialWriteSemaphore, 100 / portTICK_PERIOD_MS) ==
             pdTRUE) {
           _serial->print(command + _cmdTerminator);
@@ -87,7 +74,7 @@
         } else {
           // sLog.send("writeCmd Semaphore fail");
         }
-      }
+      // }
     }
   } //writeCmd()
 
@@ -111,23 +98,6 @@
             if (_byte_read == '\xFF') _terminatorCount++;
           }
           xSemaphoreGive(_xSerialReadSemaphore);
-          // Queue
-          if (_nexBytes.length() <= ESP_BUFFER_SIZE) {
-            // Convert to ASCII triplets and Queue
-              if (_nexBytes.length() > 3) {
-                std::string _hexString;
-                char _x[3] = {};
-                _hexString.reserve(_nexBytes.length() * 3);
-                for (const auto& item : _nexBytes) {
-                  sprintf(_x, "%02X ", item);
-                  _hexString += _x;
-                }
-                Serial.println((String)_hexString.c_str());
-                if (xQueueSend(read_from_Nextion_queue, (void *)_hexString.c_str(), 0) != pdTRUE) {
-                  Serial.println("Error sending to Nextion queue");
-                }
-              }
-          }
           return _nexBytes.length();
         }
         xSemaphoreGive(_xSerialReadSemaphore);
