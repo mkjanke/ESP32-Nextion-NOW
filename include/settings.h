@@ -3,7 +3,7 @@
 
 
 #define HEARTBEAT 1000L         // Sensor and WiFi loop delay (ms)
-#define DEVICE_NAME "ESP-Test"
+#define DEVICE_NAME "ESP-Display"
 
 // Nextion Serial configuration
 // May need to use Serial2, depending on ESP32 module and pinouts

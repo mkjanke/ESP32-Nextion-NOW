@@ -68,7 +68,7 @@ void writeToNextion(void *parameter) {
       } else {
         // Valid JSON doc, now test if relevent to us
         if (doc.containsKey("D") && doc.containsKey("CMD"))
-          if (doc["D"] == "ESP-Display") {
+          if (doc["D"] == DEVICE_NAME) {
             String command = doc["CMD"];
             Serial.println(command);
             myNex.writeCmd(command);
