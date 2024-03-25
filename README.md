@@ -24,6 +24,8 @@ Message from Nextion '66 00' (Nextion 'sendme' response)
 
 Note that Nextion responses are formatted and sent as ASCII representation of the hexadecimal emitted by Nextion
 
+The companion app to this: https://github.com/mkjanke/ESP32-Now-JSON-GW. This gateway app receives ESP-NOW broadcasts and forwards them to an attached serial port. 
+
 Key components:
 
 * ESP_NOW callback:
