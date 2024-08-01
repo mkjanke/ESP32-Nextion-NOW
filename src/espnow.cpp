@@ -42,9 +42,10 @@ void uptime() {
   static const uint32_t millis_in_hour = 1000 * 60 * 60;
   static const uint32_t millis_in_minute = 1000 * 60;
 
-  uint8_t days = millis() / (millis_in_day);
-  uint8_t hours = (millis() - (days * millis_in_day)) / millis_in_hour;
-  uint8_t minutes = (millis() - (days * millis_in_day) - (hours * millis_in_hour)) / millis_in_minute;
+  unsigned long now = millis();
+  uint8_t days = now / (millis_in_day);
+  uint8_t hours = (now - (days * millis_in_day)) / millis_in_hour;
+  uint8_t minutes = (now - (days * millis_in_day) - (hours * millis_in_hour)) / millis_in_minute;
   snprintf(uptimeBuffer, sizeof(uptimeBuffer), "%2dd%2dh%2dm", days, hours, minutes);
 }
 
@@ -53,7 +54,7 @@ void uptime() {
 // If Nextion command, send to nextion
 void writeToNextion(void *parameter) {
   char receiveBuffer[ESP_BUFFER_SIZE];
-  StaticJsonDocument<ESP_BUFFER_SIZE + 32> doc;
+  JsonDocument doc;
 
   for (;;) {
     vTaskDelay(10 / portTICK_PERIOD_MS);
@@ -96,13 +97,13 @@ void writeToEspNow(void *parameter) {
   }
 }
 
-// Send heartbeat out to ESP_NOW broadcastAddress
+// Send heartbeat out to ESP_NOW broadcast address
 void espnowHeartbeat(void *parameter) {
   String jsonMessage = "";
   jsonMessage.reserve(ESP_BUFFER_SIZE + 2);
-  StaticJsonDocument<ESP_BUFFER_SIZE> doc;
+  JsonDocument doc;
   for (;;) {
-    uint64_t now = esp_timer_get_time() / 1000 / 1000;
+    // uint64_t now = esp_timer_get_time() / 1000 / 1000;
     uptime();
     doc.clear();
     jsonMessage.clear();
@@ -112,7 +113,7 @@ void espnowHeartbeat(void *parameter) {
     doc["R"] = uxTaskGetStackHighWaterMark(xhandleHeartbeat);
     doc["W"] = uxTaskGetStackHighWaterMark(xhandleEspNowWriteHandle);
     doc["H"] = esp_get_minimum_free_heap_size();
-    doc["Q"] = uxQueueMessagesWaiting(send_to_Serial_queue);
+    // doc["Q"] = uxQueueMessagesWaiting(send_to_Serial_queue);
 
     serializeJson(doc, jsonMessage);  // Convert JsonDoc to JSON string
     if (!espNowSend(jsonMessage)) {
@@ -176,7 +177,6 @@ bool espNowSend(const JsonDocument &doc) {
 
 // Initialize ESP_NOW interface. Call once from setup()
 bool initEspNow() {
-  // Initialize ESP-NOW
   if (esp_now_init() != ESP_OK) {
     Serial.println("Error initializing ESP-NOW");
     return false;

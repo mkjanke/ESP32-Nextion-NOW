@@ -40,8 +40,7 @@ void loop() {
 // Read incoming events (messages) from Nextion
 // Forward filtered events to ESP-NOW
 void handleNextion(void* parameter) {
-  char receiveBuffer[ESP_BUFFER_SIZE];      // Incoming buffer for Nextion Queue messages
-  StaticJsonDocument<ESP_BUFFER_SIZE> doc;
+  JsonDocument doc;
 
   // Events we care about
   const char filter[] = {'\x65', '\x66', '\x67', '\x68',
@@ -49,11 +48,12 @@ void handleNextion(void* parameter) {
                          '\xAA'};
 
   std::string _bytes;   // Raw bytes returned from Nextion, incl. \xFF terminaters
-  _bytes.reserve(48);   // Size of buffer is arbitrary. 
+  _bytes.reserve(255);   // Size of buffer is arbitrary. 
 
   std::string _hexString;  // _bytes converted to space delimited ASCII chars
                            // I.E. 1A B4 E4 FF FF FF
-  char _x[3] = {};
+
+  char _x[4] = {};
 
   vTaskDelay(100 / portTICK_PERIOD_MS);
   for (;;) {  // ever
@@ -61,7 +61,7 @@ void handleNextion(void* parameter) {
     if (_bytes.length() > 0) _bytes.clear();
     if (_hexString.length() > 0) _hexString.clear();
 
-    int _len = myNex.listen(_bytes, 48);
+    int _len = myNex.listen(_bytes, 255);
     if (_len) {
       if (_len > 3) {
         _hexString.reserve(_len * 3);

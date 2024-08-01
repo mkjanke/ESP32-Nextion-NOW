@@ -1,5 +1,8 @@
 #include "nextionInterface.h"
 
+  /// @brief Class to handle communication with Nextion device.
+  /// @param serial Serial port to which Nextion is attached
+  /// @param baud Baud rate to be used for communication with Nextion
   myNextionInterface::myNextionInterface(HardwareSerial& serial, unsigned long baud) {
     _serial = &serial;
     _baud = baud;
@@ -11,6 +14,9 @@
     xSemaphoreGive(_xSerialReadSemaphore);
   }
 
+  /// @brief Initialize Nextion Interface 
+  ///        Flush serial interface, reset Nextion display
+  /// @return true on success, false on failure.
   bool myNextionInterface::begin() {
     vTaskDelay(100 / portTICK_PERIOD_MS);
     _serial->begin(_baud, SERIAL_8N1, RXDN, TXDN);
@@ -24,7 +30,7 @@
     return true;
   }
 
-  // Read and throw away serial input until no bytes (or timeout)
+  /// @brief Read and throw away serial input until no bytes or timeout
   void myNextionInterface::flushReads(){
     if(_xSerialReadSemaphore != NULL ){
       if (xSemaphoreTake(_xSerialReadSemaphore, 400 / portTICK_PERIOD_MS)) {
@@ -38,6 +44,11 @@
   }
 
   // Thread safe writes (I think...)
+
+  /// @brief Write Nextion formatted 'Number' to Nextion display object 'val' property
+  ///        via serial port
+  /// @param _componentName Name of Nextion object/component
+  /// @param _val Number to write
   void myNextionInterface::writeNum(const String& _componentName, uint32_t _val) {
     String _command = _componentName + "=" +_val;
     if(_xSerialWriteSemaphore != NULL ){
@@ -45,12 +56,14 @@
           pdTRUE) {
         _serial->print(_command + _cmdTerminator);
         xSemaphoreGive(_xSerialWriteSemaphore);
-      } else {
-        // sLog.send("writeNum Semaphore fail");
       }
     }
   } //writeNum()
 
+  /// @brief Write Nextion Arduino String object to Nextion display object 'txt' property 
+  ///        via serial port
+  /// @param command Name of Nextion object/component
+  /// @param txt String to write
   void myNextionInterface::writeStr(const String& command, const String& txt) {
     String _command = command + "=\"" + txt + "\"";
     if(_xSerialWriteSemaphore != NULL ){
@@ -58,30 +71,28 @@
           pdTRUE) {
         _serial->print(_command + _cmdTerminator);
         xSemaphoreGive(_xSerialWriteSemaphore);
-      } else {
-        // sLog.send("writeNum Semaphore fail");
       }
     }
   } //writeStr()
 
+  /// @brief Write generic Nextion command to Nextion display via serial port
+  /// @param command Name of Nextion object/component
   void myNextionInterface::writeCmd(const String& command) {
     if(_xSerialWriteSemaphore != NULL ){
-      // if(_xSerialWriteSemaphore != NULL ){
         if (xSemaphoreTake(_xSerialWriteSemaphore, 100 / portTICK_PERIOD_MS) ==
             pdTRUE) {
           _serial->print(command + _cmdTerminator);
           xSemaphoreGive(_xSerialWriteSemaphore);
-        } else {
-          // sLog.send("writeCmd Semaphore fail");
         }
-      // }
     }
   } //writeCmd()
 
-  // This gets called in a task or the loop().
-  // Pass std::string and maximum bytes to be read
-  // Returns actual bytes read and populated string
-  // or 'false' if no bytes read
+
+  /// @brief Listen for data from Nextion device 
+  ///        Call in a task or the loop() function periodically.
+  /// @param _nexBytes std::string in which to place bytes from Nextion
+  /// @param _size Max number of bytes to read
+  /// @return Number of bytes read or 'false' if no bytes read
   int myNextionInterface::listen(std::string& _nexBytes, uint8_t _size) {
     if(_xSerialReadSemaphore != NULL ){
       if (xSemaphoreTake(_xSerialReadSemaphore, 100 / portTICK_PERIOD_MS)) {
